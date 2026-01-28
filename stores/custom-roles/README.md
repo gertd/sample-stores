@@ -11,8 +11,6 @@
   - [Expected Outcomes](#expected-outcomes)
 - [Modeling in OpenFGA](#modeling-in-openfga)
   - [Model](#model)
-  - [Tuples](#tuples)
-  - [Assertions](#assertions)
 - [Try It Out](#try-it-out)
 
 ## Use-Case
@@ -68,94 +66,48 @@ There are users, organizations, teams and assets.
 
 ### Model
 ```python
+model
+  # We are using the 1.1 schema with type restrictions
+  schema 1.1
 type user
-type org
-  relations
-    define owner as self
-    define member as self or owner
-    define asset_creator as self or owner
-    define asset_editor as self or owner
-    define role_assigner as self or owner
-    define role_creator as self or owner
-    define team_assigner as self or owner
-    define team_creator as self or owner
-    define asset_viewer as self or asset_commenter
-    define asset_category_creator as self or owner
-    define asset_commenter as self or asset_editor
 type team
   relations
-    define member as self
+    define member: [user]
 type role
   relations
-    define assignee as self
+    define assignee: [user,team#member,org#member]
+type org
+  relations
+    define asset_category_creator: [role#assignee] or owner
+    define asset_commenter: [role#assignee] or asset_editor
+    define asset_creator: [role#assignee] or owner
+    define asset_editor: [role#assignee] or owner
+    define asset_viewer: [role#assignee] or asset_commenter
+    define member: [user] or owner
+    define owner: [user]
+    define role_assigner: [role#assignee] or owner
+    define role_creator: [role#assignee] or owner
+    define team_assigner: [role#assignee] or owner
+    define team_creator: [role#assignee] or owner
 type asset-category
   relations
-    define org as self
-    define asset_creator as self or asset_creator from org
-    define editor as self or asset_editor from org
-    define commenter as self or editor or asset_commenter from org
-    define viewer as self or commenter or asset_viewer from org
+    define asset_creator: [role#assignee] or asset_creator from org
+    define commenter: [role#assignee] or editor or asset_commenter from org
+    define editor: [role#assignee] or asset_editor from org
+    define org: [org]
+    define viewer: [role#assignee] or commenter or asset_viewer from org
 type asset
   relations
-    define category as self
-    define edit as self or editor from category
-    define comment as self or edit or commenter from category
-    define view as self or comment or viewer from category
+    define category: [asset-category]
+    define comment: [role#assignee] or edit or commenter from category
+    define edit: [role#assignee] or editor from category
+    define view: [role#assignee] or comment or viewer from category
 ```
 
-> Note: The OpenFGA API accepts a JSON syntax for the authorization model that is different from the DSL shown above
->       To switch between the two syntaxes, you can use the [@openfga/syntax-transformer npm package](https://www.npmjs.com/package/@openfga/syntax-transformer) or the [Auth0 FGA Playground](https://play.fga.dev)
-
-You can see a representation of this model in the JSON syntax accepted by the OpenFGA API in [authorization-model.json](./authorization-model.json).
-
-### Tuples
-
-| User                              | Relation      | Object                         | Description                                                                                           |
-|-----------------------------------|---------------|--------------------------------|-------------------------------------------------------------------------------------------------------|
-| user:carlos                       | owner         | org:contoso                    | Carlos is an owner of the Contoso organization                                                        |
-| user:anne                         | member        | org:contoso                    | Anne is a member of the Contoso organization                                                          |
-| user:beth                         | member        | org:contoso                    | Beth is a member of the Contoso organization                                                          |
-| user:carlos                       | member        | org:contoso                    | Carlos is a member of the Contoso organization                                                        |
-| user:daniel                       | member        | org:contoso                    | Daniel is a member of the Contoso organization                                                        |
-| user:edith                        | member        | org:branding-contractor-1      | Edith is a member of the Branding Contractor 1 organization                                           |
-| user:anne                         | member        | team:design                    | Anne is a member of the Design team                                                                   |
-| user:beth                         | member        | team:marketing                 | Beth is a member of the Marketing team                                                                |
-| user:daniel                       | member        | team:qa                        | Daniel is a member of the QA team                                                                     |
-| org:contoso                       | org           | asset-category:website-content | The "Website Content" asset category is in the Contoso organization                                   |
-| org:contoso                       | org           | asset-category:website-media   | The "Website Media" asset category is in the Contoso organization                                     |
-| org:branding-contractor-1#member  | assignee      | role:media-asset-creator       | Members of the Branding Contractor 1 organization are assigned the "Media Asset Creator" role         |
-| role:content-qa#assignee          | asset_viewer  | org:contoso                    | Assignees of the "Content QA" role are asset viewers on the Contoso organization                      |
-| role:content-manager#assignee     | asset_creator | asset-category:website-content | Assignees of the "Content Manager" role are can create assets in the "Website Content" asset category |
-| role:content-manager#assignee     | editor        | asset-category:website-content | Assignees of the "Content Manager" role are editors on the "Website Content" asset category           |
-| role:media-asset-manager#assignee | viewer        | asset-category:website-content | Assignees of the "Media Asset Manager" role are viewers on the "Website Content" asset category       |
-| role:media-asset-creator#assignee | asset_creator | asset-category:website-media   | Assignees of the "Content QA" role can create assets on the "Website Media" asset category            |
-| role:media-asset-manager#assignee | asset_creator | asset-category:website-media   | Assignees of the "Media Asset Manager" role can create assets on the "Website Media" asset category   |
-| role:media-asset-manager#assignee | editor        | asset-category:website-media   | Assignees of the "Media Asset Manager" role are editors on the "Website Media" asset category         |
-| role:content-manager#assignee     | viewer        | asset-category:website-media   | Assignees of the "Content Manager" role are viewers on the "Website Media" asset category             |
-| asset-category:website-content    | category      | asset:homepage                 | "Website Content" is the asset category of the "Homepage" asset                                       |
-| asset-category:website-media      | category      | asset:website-hero-image       | "Website Media" is the asset category of the "Website Hero Image" asset                               |
-| team:marketing#member             | assignee      | role:content-manager           | Members of the Marketing team are assigned the "Content Manager" role                                 |
-| team:qa#member                    | assignee      | role:content-qa                | Members of the QA team are assigned the "Content QA" role                                             |
-| team:design#member                | assignee      | role:media-asset-manager       | Members of the Design team are assigned the "Media Asset Manager" role                                |
-
-These are represented in this file: [tuples.json](./tuples.json).
-
-### Assertions
-
-| User        | Relation      | Object                       | Allowed? |
-|-------------|---------------|------------------------------|----------|
-| user:carlos | role_creator  | org:contoso                  | Yes      |
-| user:anne   | view          | asset:website-hero-image     | Yes      |
-| user:beth   | edit          | asset:website-hero-image     | No       |
-| user:beth   | edit          | asset:homepage               | Yes      |
-| user:carlos | edit          | asset:homepage               | Yes      |
-| user:daniel | edit          | asset:homepage               | No       |
-| user:daniel | view          | asset:homepage               | Yes      |
-| user:edith  | view          | asset:homepage               | No       |
-| user:edith  | asset_creator | asset-category:website-media | Yes      |
-
-These are represented in this file: [assertions.json](./assertions.json).
+See the tuples and tests in the [store.yaml](./store.fga.yaml) file.
 
 ## Try It Out
 
-Use `custom-roles` as the SAMPLE_STORE, and follow the rest of the instructions on [Try it out section in the main README](https://github.com/openfga/sample-stores#try-it-out).
+1. Make sure you have the [FGA CLI](https://github.com/openfga/cli/?tab=readme-ov-file#installation)
+
+2. In the `custom-roles` directory, run `fga model test --tests store.yaml`

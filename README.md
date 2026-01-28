@@ -1,102 +1,108 @@
 # OpenFGA Sample Stores
 
-[![Discord Server](https://img.shields.io/discord/759188666072825867?color=7289da&logo=discord "Discord Server")](https://discord.com/channels/759188666072825867/930524706854031421)
-[![Twitter](https://img.shields.io/twitter/follow/openfga?color=%23179CF0&logo=twitter&style=flat-square "@openfga on Twitter")](https://twitter.com/openfga)
+[![Join our community](https://img.shields.io/badge/slack-cncf_%23openfga-40abb8.svg?logo=slack)](https://openfga.dev/community)
+[![Twitter](https://img.shields.io/twitter/follow/openfga?color=%23179CF0&logo=twitter&style=flat-square "@openfga on Twitter")](https://x.com/openfga)
 
-This repo contains some OpenFGA [sample stores configurations](#sample-stores).
+This repository contains [sample store models](#sample-stores) for [OpenFGA](https://openfga.dev).
 
 ## Table of Contents
 
-- [About OpenFGA](#about-openfga)
-- [Sample Stores](#sample-stores)
+- [Table of Contents](#table-of-contents)
+- [Sample Store Models](#sample-store-models)
 - [Creating your store and loading sample data](#creating-your-store-and-loading-sample-data)
-- [Resources](#resources)
+- [OpenFGA models in open source projects](#openfga-models-in-open-source-projects)
+- [Modeling Resources](#modeling-resources)
 
-## About OpenFGA
+## Sample Store Models
 
-[OpenFGA](https://github.com/openfga/openfga) is an open source Fine-Grained Authorization solution based on Google's Zanzibar. It was created by the Auth0 FGA team and welcomes community contribution. OpenFGA is designed to make it easy for application builders to quickly add fine-grained authorization to their applications. It offers an HTTP API and has SDKs for programming languages including [JavaScript](https://github.com/openfga/js-sdk), [GoLang](https://github.com/openfga/go-sdk) and [.NET](https://github.com/openfga/dotnet-sdk). More SDKs and integrations such as Rego are planned for the future. OpenFGA is designed and optimized for reliability and low latency at a high scale.
-
-## Sample Stores
-
-Some sample stores are:
+- [Modeling ABAC with ReBAC](./stores/abac-with-rebac)
+- [Advanced Entitlements](./stores/advanced-entitlements)
+- [Banking](./stores/banking)
+- [Condition Data Types](./stores/condition-data-types)
+- [Custom Roles](./stores/custom-roles)
+- [Developer Portal](./stores/developer-portal)
+- [Entitlements](./stores/entitlements)
+- [Expenses](./stores/expenses)
 - [GitHub](./stores/github)
 - [Google Drive](./stores/gdrive)
-- [Expenses](./stores/expenses)
+- [Group Resource Attributes](./stores/groups-resource-attributes)
 - [IoT](./stores/iot)
+- [IP-Based Access](./stores/ip-based-access)
+- [Modeling Guide](./stores/modeling-guide)
+- [Modeling Multi-Tenant Role-Based Access Control](./stores/multitenant-rbac)
+- [Modular Models](./stores/modular)
+- [Role Assignments](./stores/role-assignments)
 - [Slack](./stores/slack)
-- [Custom Roles](./stores/custom-roles)
+- [Super-Admin](./stores/superadmin)
+- [Temporal Access](./stores/temporal-access)
+
+## Authoring Models using Coding Assistants
+
+This repository includes a [copilot-instructions](.github/copilot-instructions.md) file that can help you author OpenFGA models. It can be used in VS Code or in any AI-assisted IDE. You can also use it as a prompt, or system prompt, in any LLM. 
+
+Some prompts you can try:
+
+- Create an OpenFGA authorization model for an insurance company.
+- Create an OpenFGA authorization model for B2B SaaS project management system.
+- Create an OpenFGA authorization model for <Product Name> (e.g. create a model for Figma).
+
+It will create a model in an `.fga` file, and a `.fga.yaml` with tuples/tests, and use the [CLI](https://github.com/openfga/cli) to run the tests.
+
+To use it in Visual Studio Code:
+- Setup [VS Code with Copilot](https://code.visualstudio.com/docs/copilot/setup-simplified)
+- Create a new folder, with a .github folder, and copy the [copilot-instructions](.github/copilot-instructions.md) file.
+- Open Copilot
+- Prompt
+
+Other coding assistants look for other file names (CLAUDE.md, AGENTS.md, Cursor rules).
+
+You can also use the [DeepWiki MCP](https://docs.devin.ai/work-with-devin/deepwiki-mcp) or the [Context7 MCP](https://github.com/upstash/context7) to provide AI agents with OpenFGA context to help you implement OpenFGA using different SDKs. 
+
+For modeling assistance, we you use [copilot-instructions](.github/copilot-instructions.md) even if you configure an MCP.
 
 ## Creating your store and loading sample data
 
 To try this out, you need the following tools installed:
-- `docker`
+- The `fga` CLI, follow the [installation instructions](https://github.com/openfga/cli/?tab=readme-ov-file#installation) here to get it
 - `git`
-- `curl`
-- `jq`
 
-1. Ensure you have [openfga](https://github.com/openfga/openfga) up and running.
-```
-docker pull openfga/openfga # Ensure you have the latest openfga version
-docker run -p 127.0.0.1:8080:8080 openfga/openfga run # run openfga server
-```
+1.  Clone this repository
+  ```sh
+  git clone https://github.com/openfga/sample-stores.git openfga-sample-stores && cd $_
+  ```
 
-2. Clone this repository
-```
-git clone https://github.com/openfga/sample-stores.git openfga-sample-stores && cd openfga-sample-stores
-```
+2. Use the `fga` CLI to test the store you choose (e.g. `github`, `custom-roles`, etc..)
+  ```sh
+  SAMPLE_STORE=github
+  fga model test --tests "stores/${SAMPLE_STORE}/store.fga.yaml"
+  ```
 
-3. Navigate into the [sample store](#sample-stores) you choose (e.g. `github`, `custom-roles`, etc..)
-```
-SAMPLE_STORE=github
-cd stores/$SAMPLE_STORE_NAME
-```
+## OpenFGA models in open source projects
 
-4. Loading data into your store
-```shell
-FGA_API_URI=http://localhost:8080
+- [Linux Foundation](https://github.com/linuxfoundation/lfx-v2-helm/blob/main/charts/lfx-platform/templates/openfga/model.yaml)
+- [canonical/lxd](https://github.com/canonical/lxd/blob/main/lxd/auth/drivers/openfga_model.openfga)
+- [canonical/identity-platform-login-ui](https://github.com/canonical/identity-platform-login-ui/blob/main/internal/authorization/schema.openfga)
+- [canonical/jimm](https://github.com/canonical/jimm/blob/v3/openfga/authorisation_model.fga)
+- [grafana/grafana](https://github.com/grafana/grafana/tree/main/pkg/services/authz/zanzana/schema)
+- [lxc/incus](https://github.com/lxc/incus/blob/main/internal/server/auth/driver_openfga_model.openfga)
+- [mindersec/minder](https://github.com/mindersec/minder/blob/main/internal/authz/model/minder.fga)
+- [theopenlane/core](https://github.com/theopenlane/core/blob/main/fga/model/model.fga)
+- [instill-ai/pipeline-backend](https://github.com/instill-ai/pipeline-backend/blob/main/pkg/acl/model.go)
+- [virtool/virtool](https://github.com/virtool/virtool/blob/c621ba6a22bfe3464fe59287337029e42295cfcb/virtool/authorization/openfga.py#L123)
+- [concrete-utopia/utopia](https://github.com/concrete-utopia/utopia/blob/master/utopia-remix/fga/model.fga)
+- [Cross-Lab-Project/crosslab](https://github.com/Cross-Lab-Project/crosslab/blob/main/services/authorization/relation_model.fga)
+- [sourcegraph/sourcegraph-public-snapshot](https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/main/cmd/enterprise-portal/service/iam_model.fga)
+- [klothoplatform/infracopilot](https://github.com/klothoplatform/infracopilot/blob/main/src/auth_service/model.fga)
+- [ZEISS/knox](https://github.com/ZEISS/knox/blob/main/schema/auth.fga)
+- [Lakekeeper](https://github.com/lakekeeper/lakekeeper/tree/main/authz/openfga/v3.2)
 
-# Create the store
-STORE_ID=$(curl -X POST $FGA_API_URI/stores -d @store.json | jq -r '.id')
-# Post the authorization model
-AUTHORIZATION_MODEL_ID=$(curl -X POST $FGA_API_URI/stores/$STORE_ID/authorization-models -d @authorization-model.json | jq -r '.authorization_model_id')
-# Write the tuples (Note: max tuples per write request = 10)
-cat tuples.json | jq -c '. | _nwise(10) | { "writes": { "tuple_keys": . } }' | (
-    while read id; do
-        curl -X POST $FGA_API_URI/stores/$STORE_ID/write -d $id
-    done
-)
-# Update the assertions for that authorization model
-cat assertions.json | jq '. |= { "assertions": .  }' | curl -X PUT $FGA_API_URI/stores/$STORE_ID/assertions/$AUTHORIZATION_MODEL_ID -d @-
+If you are using OpenFGA in your open source project, please let us know by opening a PR to add your model to this list.
 
-# Run a sample check
-cat assertions.json | jq '.[0] | { "tuple_key": { "user": .tuple_key.user, "relation": .tuple_key.relation, "object": .tuple_key.object } }' | curl -X POST $FGA_API_URI/stores/$STORE_ID/check -d @-# Run sample checks (here we are just looping through our assertions and issuing checks for them)
-
-# Run checks for all assertions
-cat assertions.json | jq -c '. | _nwise(1) | { "tuple_key": { "user": .[0].tuple_key.user, "relation": .[0].tuple_key.relation, "object": .[0].tuple_key.object } }' | (
-    while read body; do
-        FGA_ALLOWED=$(curl -s -X POST $FGA_API_URI/stores/$STORE_ID/check -d $body | jq '.allowed')
-        FGA_USER=$(echo $body | jq -rc '.tuple_key.user')
-        FGA_RELATION=$(echo $body | jq -rc '.tuple_key.relation')
-        FGA_OBJECT=$(echo $body | jq -rc '.tuple_key.object')
-        echo "check(user=$FGA_USER, relation=$FGA_RELATION, object=$FGA_OBJECT); allowed: $FGA_ALLOWED"
-    done
-)
-```
-
-## Resources
-
-- [OpenFGA Documentation](https://openfga.dev)
-- [OpenFGA on GitHub](https://github.com/openfga/)
-- [OpenFGA on Twitter](https://twitter.com/OpenFGA/)
+## Modeling Resources
+- [Modeling Guide](https://www.youtube.com/watch?v=5Lwy9aHXXHE&list=PLUR5l-oTFZqWaDdhEOVt_IfPOIbKo1Ypt)
+- [OpenFGA Documentation](https://openfga.dev/docs/modeling)
 - [Zanzibar Academy](https://zanzibar.academy)
-- [Authorization in Software Podcast](https://authorizationinsoftware.auth0.com/public/49/Authorization-in-Software-f9b69587)
-- [Discord Community](https://discord.gg/pvbNmqC)
-- [Auth0 FGA Playground](https://play.fga.dev)
+- [Implementing Multi-Tenancy in Chroma: Part 2 - Authorization Model with OpenFGA](https://cookbook.chromadb.dev/strategies/multi-tenancy/authorization-model-with-openfga/)
+- [Introduction into OpenFGA](https://www.ericksegaar.com/2024/03/04/introduction-into-openfga/)
 
-## Author
 
-[OpenFGA Team](https://github.com/openfga)
-
-## License
-
-[Apache-2.0](./LICENSE)

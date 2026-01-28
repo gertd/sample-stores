@@ -11,8 +11,6 @@
   - [Expected Outcomes](#expected-outcomes)
 - [Modeling in OpenFGA](#modeling-in-openfga)
   - [Model](#model)
-  - [Tuples](#tuples)
-  - [Assertions](#assertions)
 - [Try It Out](#try-it-out)
 
 ## Use-Case
@@ -21,7 +19,7 @@
 
 This model is inspired by Slack and some of their publicly documented roles and permissions.
 
-> As reference, Slack's publicly available docs were used:
+> As a reference, Slack's publicly available docs were used:
 >
 > - [Role Management at Slack](https://slack.engineering/role-management-at-slack/)
 > - [Types of Roles in Slack](https://slack.com/intl/en-ca/help/articles/360018112273-Types-of-roles-in-Slack)
@@ -38,7 +36,7 @@ Workspace Roles:
 
 System Roles:
 
-- **Channels Admin**: This type of user has the permission to archive channels, rename channels, create private channels, and convert public channels into private channels.
+- **Channels Admin**: This type of user has permission to archive channels, rename channels, create private channels, and convert public channels into private channels.
 
 Channel Settings:
 
@@ -59,7 +57,7 @@ There are users, workspaces and channels.
 - #general channel is a public channel, anyone who is a member of the Sandcastle workspace can view it
 - In the Sandcastle workspace:
   - Amy has a legacy admin role
-  - Bob has a channels admin role
+  - Bob has a channel admin role
   - Catherine and Emily are members
   - David is a guest
 - Catherine and Emily are normal members of the Sandcastle workspace, they can view all public channels, as well as channels they have been invited to
@@ -81,68 +79,40 @@ There are users, workspaces and channels.
 ### Model
 
 ```python
+model
+  # We are using the 1.1 schema with type restrictions
+  schema 1.1
+
 # There are users
 type user
+
 # There are workspaces
 type workspace
   relations
-    # users can have the legacy admin role on workspaces
-    define legacy_admin as self
-    # users can have the new channels admin role on workspaces (anyone with a legacy admin role also gets all the channels admin role access) 
-    define channels_admin as self or legacy_admin
-    # users can have the member role on workspaces, admins automatically get all access granted to members
-    define member as self or legacy_admin or channels_admin
-    # users can have the guest role on workspaces
-    define guest as self
+    # Users can have the legacy admin role on workspaces
+    define legacy_admin: [user]
+    # Users can have the new channels admin role on workspaces (anyone with a legacy admin role also gets all the channels admin role access) 
+    define channels_admin: [user] or legacy_admin
+    # Users can have the member role on workspaces, admins automatically get all access granted to members
+    define member: [user] or legacy_admin or channels_admin
+    # Users can have the guest role on workspaces
+    define guest: [user]
+
 # There are channels
 type channel
   relations
-    # channels have a parent workspace
-    define parent_workspace as self
-    # users can be writers on channels
-    define writer as self
-    # users can be viewers on channels, writers inherit any access viewers have
-    define viewer as self or writer
+    # Channels have a parent workspace
+    define parent_workspace: [workspace]
+    # Users can be writers on channels
+    define writer: [user,workspace#member]
+    # Users can be viewers on channels, writers inherit any access viewers have
+    define commenter: [user,workspace#member] or writer
 ```
 
-> Note: The OpenFGA API accepts a JSON syntax for the authorization model that is different from the DSL shown above
->       To switch between the two syntaxes, you can use the [@openfga/syntax-transformer npm package](https://www.npmjs.com/package/@openfga/syntax-transformer) or the [Auth0 FGA Playground](https://play.fga.dev)
-
-You can see a representation of this model in the JSON syntax accepted by the OpenFGA API in [authorization-model.json](./authorization-model.json).
-
-### Tuples
-
-| User                        | Relation         | Object                          | Description                                                                              |
-|-----------------------------|------------------|---------------------------------|------------------------------------------------------------------------------------------|
-| workspace:sandcastle        | parent_workspace | channel:general                 | The Sandcastle workspace is the parent workspace of the #general channel                 |
-| workspace:sandcastle        | parent_workspace | channel:marketing_internal      | The Sandcastle workspace is the parent workspace of the #marketing_internal channel      |
-| workspace:sandcastle        | parent_workspace | channel:proj_marketing_campaign | The Sandcastle workspace is the parent workspace of the #proj_marketing_campaign channel |
-| workspace:sandcastle#member | writer           | channel:proj_marketing_campaign | Members of the Sandcastle workspace are writers in the #proj_marketing_campaign channel  |
-| amy                         | legacy_admin     | workspace:sandcastle            | Amy is a legacy admin on the Sandcastle workspace                                        |
-| bob                         | channels_admin   | workspace:sandcastle            | Bob is a channels admin on the Sandcastle workspace                                      |
-| catherine                   | member           | workspace:sandcastle            | Catherine is a member in the Sandcastle workspace                                        |
-| david                       | guest            | workspace:sandcastle            | David is a guest in the Sandcastle workspace                                             |
-| emily                       | member           | workspace:sandcastle            | Emily is a member in the Sandcastle workspace                                            |
-| bob                         | writer           | channel:marketing_internal      | Bob is a writer in the #marketing_internal channel                                       |
-| david                       | writer           | channel:proj_marketing_campaign | David is a writer in the #proj_marketing_campaign channel                                |
-| emily                       | writer           | channel:marketing_internal      | Emily is a writer in the #marketing_internal channel                                     |
-| emily                       | writer           | channel:general                 | Emily is a writer in the #general channel                                                |
-
-These are represented in this file: [tuples.json](./tuples.json).
-
-### Assertions
-
-| User  | Object                          | Relation       | Allowed? |
-|-------|---------------------------------|----------------|----------|
-| amy   | workspace:sandcastle            | channels_admin | Yes      |
-| amy   | workspace:sandcastle            | channels_admin | No       |
-| emily | channel:marketing_internal      | writer         | Yes      |
-| david | channel:marketing_internal      | writer         | No       |
-| david | channel:proj_marketing_campaign | writer         | Yes      |
-| bob   | channel:general                 | writer         | No       |
-
-These are represented in this file: [assertions.json](./assertions.json).
+See the tuples and tests in the [store.yaml](./store.fga.yaml) file.
 
 ## Try It Out
 
-Use `slack` as the SAMPLE_STORE, and follow the rest of the instructions on [Try it out section in the main README](https://github.com/openfga/sample-stores#try-it-out).
+1. Make sure you have the [FGA CLI](https://github.com/openfga/cli/?tab=readme-ov-file#installation)
+
+2. In the `slack` directory, run `fga model test --tests store.yaml`
